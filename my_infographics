@@ -1,0 +1,118 @@
+"use client";
+import React from "react";
+
+function MainComponent() {
+  const [infographics, setInfographics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { data: user } = useUser();
+
+  useEffect(() => {
+    async function fetchInfographics() {
+      try {
+        const response = await fetch("/api/infographics/list", {
+          method: "POST",
+        });
+        if (!response.ok) throw new Error("Failed to load infographics");
+        const data = await response.json();
+        setInfographics(data.infographics);
+      } catch (err) {
+        console.error(err);
+        setError("Could not load your infographics");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchInfographics();
+  }, []);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Please sign in to view your infographics
+          </h1>
+          <a
+            href="/account/signin"
+            className="inline-block bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+          >
+            Sign In
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            My Infographics
+          </h1>
+          <p className="text-gray-600">
+            View and download your created infographics
+          </p>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="text-gray-600">Loading your infographics...</div>
+          </div>
+        ) : infographics.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-lg shadow">
+            <div className="text-gray-600 mb-4">
+              You haven't created any infographics yet
+            </div>
+            <a
+              href="/"
+              className="inline-block bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+            >
+              Create Your First Infographic
+            </a>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {infographics.map((infographic) => (
+              <div
+                key={infographic.id}
+                className="bg-white rounded-lg shadow overflow-hidden"
+              >
+                <img
+                  src={infographic.generated_image_url}
+                  alt={infographic.title}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-4">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                    {infographic.title}
+                  </h2>
+                  <p className="text-gray-500 text-sm mb-4">
+                    Created on{" "}
+                    {new Date(infographic.created_at).toLocaleDateString()}
+                  </p>
+                  <a
+                    href={infographic.generated_image_url}
+                    download={`${infographic.title}.png`}
+                    className="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700"
+                  >
+                    Download
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default MainComponent;
